@@ -1,17 +1,25 @@
-
-// Flutter Frontend
-
+// =============================================================================
+// FLUTTER FRONTEND – CPU Scheduling Comparator UI
+// =============================================================================
+// This UI interacts with the Python backend API at http://localhost:5000/calculate
+// It allows users to:
+//  - Add/remove processes
+//  - Enter Arrival Time (AT) and Burst Time (BT)
+//  - Enter Quantum time for Round Robin
+//  - View FCFS and RR results
+//  - Display Gantt charts
+// =============================================================================
 
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 void main() => runApp(const SchedulerApp());
 
+
 // =============================================================================
-// APP ROOT
+// APP ROOT (MaterialApp Setup)
 // =============================================================================
 class SchedulerApp extends StatelessWidget {
   const SchedulerApp({super.key});
@@ -19,22 +27,30 @@ class SchedulerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // Allows mouse dragging for desktop apps
       scrollBehavior: MaterialScrollBehavior().copyWith(
-        dragDevices: {PointerDeviceKind.mouse,PointerDeviceKind.touch}
+        dragDevices: {PointerDeviceKind.mouse, PointerDeviceKind.touch},
       ),
+
       title: 'CPU Scheduling Comparator',
       debugShowCheckedModeBanner: false,
+
+      // Global Theme
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       ),
+
+      // Home page
       home: const HomePage(),
     );
   }
 }
 
+
+
 // =============================================================================
-// HOME PAGE - Main UI
+// HOME PAGE (Main application screen)
 // =============================================================================
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -43,8 +59,10 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+
+
 class _HomePageState extends State<HomePage> {
-  // Process colors for Gantt chart
+  // Predefined colors for Gantt chart blocks
   static const colors = [
     Color(0xFF3B82F6), // Blue
     Color(0xFFEF4444), // Red
@@ -52,21 +70,26 @@ class _HomePageState extends State<HomePage> {
     Color(0xFFF59E0B), // Orange
     Color(0xFF8B5CF6), // Purple
   ];
+
+  // Idle color for CPU idle blocks
   static const idleColor = Color(0xFFCBD5E1);
 
-  // State
+  // Initial list of processes
   List<Map<String, dynamic>> processes = [
     {'id': 'P1', 'at': 0, 'bt': 4},
     {'id': 'P2', 'at': 1, 'bt': 3},
   ];
-  int pCount = 2;
-  int quantum = 2;
-  Map<String, dynamic>? result;
-  bool loading = false;
-  String? error;
+
+  int pCount = 2;           // Auto-increment process counter
+  int quantum = 2;          // Default quantum for Round Robin
+  Map<String, dynamic>? result;  // Stores backend response
+  bool loading = false;          // Loading state for API call
+  String? error;                 // Error message
+
+
 
   // ---------------------------------------------------------------------------
-  // Add new process
+  // Add new process row
   // ---------------------------------------------------------------------------
   void addProcess() {
     setState(() {
@@ -76,7 +99,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ---------------------------------------------------------------------------
-  // Remove process at index
+  // Remove process at index `i`
+  // Prevent removing the last process
   // ---------------------------------------------------------------------------
   void removeProcess(int i) {
     if (processes.length > 1) {
@@ -85,7 +109,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ---------------------------------------------------------------------------
-  // Call Python backend API
+  // API CALL to Python backend
+  // Sends JSON: { processes: [...], quantum: Q }
+  // Receives JSON containing FCFS & RR results + Gantt charts
   // ---------------------------------------------------------------------------
   Future<void> calculate() async {
     setState(() {
@@ -103,21 +129,25 @@ class _HomePageState extends State<HomePage> {
         }),
       );
 
+      // Success
       if (response.statusCode == 200) {
         setState(() => result = jsonDecode(response.body));
       } else {
         setState(() => error = 'Server error: ${response.statusCode}');
       }
     } catch (e) {
+      // If server is not running
       setState(() => error = 'Cannot connect to server. Is Python running?');
     }
 
     setState(() => loading = false);
   }
 
-  // ---------------------------------------------------------------------------
+
+
+  // =============================================================================
   // BUILD UI
-  // ---------------------------------------------------------------------------
+  // =============================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,7 +158,7 @@ class _HomePageState extends State<HomePage> {
             constraints: const BoxConstraints(maxWidth: 1200),
             child: Column(
               children: [
-                // Title
+                // ------------------------- Title -------------------------
                 const Text(
                   'CPU Scheduling Comparator',
                   style: TextStyle(
@@ -139,18 +169,20 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Input Section
+                // ------------------------- Input Section -------------------------
                 _buildCard(_buildInputSection()),
                 const SizedBox(height: 20),
 
-                // Error message
+                // ------------------------- Any Errors -------------------------
                 if (error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 16)),
+                    child: Text(error!,
+                        style:
+                            const TextStyle(color: Colors.red, fontSize: 16)),
                   ),
 
-                // Results (side by side)
+                // ------------------------- Results Section -------------------------
                 if (result != null) _buildResults(),
               ],
             ),
@@ -160,8 +192,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+
+
   // ---------------------------------------------------------------------------
-  // Card wrapper
+  // Card Container Helper
+  // Creates a white card with shadow and padding
   // ---------------------------------------------------------------------------
   Widget _buildCard(Widget child) {
     return Container(
@@ -182,13 +217,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ---------------------------------------------------------------------------
-  // Section title with underline
+  // Section title helper
   // ---------------------------------------------------------------------------
   Widget _buildSectionTitle(String text) {
     return Container(
       padding: const EdgeInsets.only(bottom: 5),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 2)),
+        border:
+            Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 2)),
       ),
       child: Text(
         text,
@@ -201,9 +237,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Input section with table and controls
-  // ---------------------------------------------------------------------------
+
+
+  // =============================================================================
+  // INPUT SECTION (Processes Table + Buttons)
+  // =============================================================================
   Widget _buildInputSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,29 +249,46 @@ class _HomePageState extends State<HomePage> {
         _buildSectionTitle('1. Configuration'),
         const SizedBox(height: 10),
 
-        // Process table
+        // ------------------------- Process Table -------------------------
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(Colors.grey.shade100),
+            headingRowColor:
+                WidgetStateProperty.all(Colors.grey.shade100),
             columns: const [
-              DataColumn(label: Text('Process ID', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Arrival Time', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Burst Time', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Process ID',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Arrival Time',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Burst Time',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Action',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
             ],
+
+            // Table rows
             rows: List.generate(processes.length, (i) {
               return DataRow(cells: [
                 DataCell(Text(processes[i]['id'])),
+
+                // Arrival Time input
                 DataCell(_buildNumberInput(
                   processes[i]['at'],
                   (v) => setState(() => processes[i]['at'] = v),
                 )),
+
+                // Burst Time input
                 DataCell(_buildNumberInput(
                   processes[i]['bt'],
                   (v) => setState(() => processes[i]['bt'] = v),
                   min: 1,
                 )),
+
+                // Delete button
                 DataCell(IconButton(
                   icon: const Icon(Icons.close, color: Colors.red),
                   onPressed: () => removeProcess(i),
@@ -242,14 +297,15 @@ class _HomePageState extends State<HomePage> {
             }),
           ),
         ),
+
         const SizedBox(height: 15),
 
-        // Controls row
+        // ------------------------- Controls (Add, Quantum, Calculate) -------------------------
         Wrap(
           spacing: 10,
           runSpacing: 10,
           children: [
-            // Add process button
+            // Add Process Button
             ElevatedButton.icon(
               onPressed: addProcess,
               icon: const Icon(Icons.add),
@@ -260,20 +316,24 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // Quantum input
+            // Quantum input field
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Time Quantum: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Time Quantum: ',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(
                   width: 60,
                   child: TextField(
-                    controller: TextEditingController(text: quantum.toString()),
+                    controller:
+                        TextEditingController(text: quantum.toString()),
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(4)),
                     ),
                     onChanged: (v) => quantum = int.tryParse(v) ?? 2,
                   ),
@@ -281,14 +341,15 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
 
-            // Calculate button
+            // Calculate Button
             ElevatedButton.icon(
               onPressed: loading ? null : calculate,
               icon: loading
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(Icons.play_arrow),
               label: Text(loading ? 'Calculating...' : 'Calculate'),
@@ -303,10 +364,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Number input field
-  // ---------------------------------------------------------------------------
-  Widget _buildNumberInput(int value, Function(int) onChanged, {int min = 0}) {
+
+
+  // =============================================================================
+  // Numeric Input Field Builder
+  // =============================================================================
+  Widget _buildNumberInput(int value, Function(int) onChanged,
+      {int min = 0}) {
     return SizedBox(
       width: 70,
       child: TextField(
@@ -314,8 +378,10 @@ class _HomePageState extends State<HomePage> {
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
         decoration: InputDecoration(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          border:
+              OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
         ),
         onChanged: (v) {
           int parsed = int.tryParse(v) ?? min;
@@ -326,39 +392,47 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Results section (FCFS and RR side by side)
-  // ---------------------------------------------------------------------------
+
+
+  // =============================================================================
+  // Results Section (FCFS + RR side-by-side)
+  // =============================================================================
   Widget _buildResults() {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Wide screen → Side-by-side
         if (constraints.maxWidth > 800) {
-          // Side by side on wide screens
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildAlgoCard('First Come First Serve (FCFS)', result!['fcfs'])),
+              Expanded(_buildAlgoCard(
+                  'First Come First Serve (FCFS)', result!['fcfs'])),
               const SizedBox(width: 20),
-              Expanded(child: _buildAlgoCard('Round Robin (Q=$quantum)', result!['rr'])),
-            ],
-          );
-        } else {
-          // Stacked on narrow screens
-          return Column(
-            children: [
-              _buildAlgoCard('First Come First Serve (FCFS)', result!['fcfs']),
-              const SizedBox(height: 20),
-              _buildAlgoCard('Round Robin (Q=$quantum)', result!['rr']),
+              Expanded(_buildAlgoCard(
+                  'Round Robin (Q=$quantum)', result!['rr'])),
             ],
           );
         }
+
+        // Narrow screen → Stacked
+        return Column(
+          children: [
+            _buildAlgoCard(
+                'First Come First Serve (FCFS)', result!['fcfs']),
+            const SizedBox(height: 20),
+            _buildAlgoCard('Round Robin (Q=$quantum)', result!['rr']),
+          ],
+        );
       },
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Algorithm result card
-  // ---------------------------------------------------------------------------
+
+
+  // =============================================================================
+  // Algorithm Result Card
+  // Shows Table + Averages + Gantt Chart
+  // =============================================================================
   Widget _buildAlgoCard(String title, Map<String, dynamic> data) {
     return _buildCard(
       Column(
@@ -367,17 +441,22 @@ class _HomePageState extends State<HomePage> {
           _buildSectionTitle(title),
           const SizedBox(height: 10),
 
-          // Results table
+          // ------------------------- Results Table -------------------------
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              headingRowColor: WidgetStateProperty.all(Colors.grey.shade100),
+              headingRowColor:
+                  WidgetStateProperty.all(Colors.grey.shade100),
               columnSpacing: 15,
               columns: ['Proc', 'AT', 'BT', 'CT', 'TAT', 'WT', 'RT']
                   .map((h) => DataColumn(
-                        label: Text(h, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        label: Text(h,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 12)),
                       ))
                   .toList(),
+
+              // Fill table rows
               rows: (data['results'] as List).map<DataRow>((r) {
                 return DataRow(cells: [
                   DataCell(Text(r['id'].toString())),
@@ -391,9 +470,10 @@ class _HomePageState extends State<HomePage> {
               }).toList(),
             ),
           ),
+
           const SizedBox(height: 10),
 
-          // Averages
+          // ------------------------- Averages -------------------------
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -406,46 +486,57 @@ class _HomePageState extends State<HomePage> {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
+
           const SizedBox(height: 15),
 
-          // Gantt chart
-          const Text('Gantt Chart', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          // ------------------------- Gantt Chart -------------------------
+          const Text('Gantt Chart',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
-          _buildGanttChart(data['gantt'] as List),
+
+          _buildGanttChart(data['gantt']),
         ],
       ),
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Gantt chart visualization
-  // ---------------------------------------------------------------------------
+
+
+  // =============================================================================
+  // GANTT CHART WIDGET
+  // Displays blocks (processes or idle periods) horizontally
+  // =============================================================================
   Widget _buildGanttChart(List gantt) {
-    // Constants for sizing
-    const double minBlockWidth = 60.0;  // Minimum width so text is readable
-    const double pixelsPerUnit = 40.0;  // Pixels per time unit
+    const double minBlockWidth = 60.0; // Ensures text fits inside block
+    const double pixelsPerUnit = 40.0; // Scale for width calculation
 
     return Container(
-      height: 90, // Extra height for time labels below
+      height: 90,
       decoration: BoxDecoration(
         border: Border.all(color: const Color(0xFFE2E8F0)),
         borderRadius: BorderRadius.circular(4),
       ),
+
+      // Horizontal scroll because Gantt charts can be long
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: gantt.map<Widget>((g) {
+            // Duration = end - start
             int duration = g['end'] - g['start'];
-            
-            // Calculate width: use minimum width or scaled width, whichever is larger
-            double width = (duration * pixelsPerUnit).clamp(minBlockWidth, double.infinity);
-            
+
+            // Convert duration to pixel width
+            double width =
+                (duration * pixelsPerUnit).clamp(minBlockWidth, double.infinity);
+
             bool isIdle = g['idle'] == true;
-            Color color = isIdle ? idleColor : colors[(g['idx'] ?? 0) % 5];
+            Color color = isIdle
+                ? idleColor
+                : colors[(g['idx'] ?? 0) % 5]; // Pick color by index
 
             return Column(
               children: [
-                // Gantt block
+                // ----------------------- Gantt Block -----------------------
                 Container(
                   width: width,
                   height: 50,
@@ -455,6 +546,8 @@ class _HomePageState extends State<HomePage> {
                       right: BorderSide(color: Colors.white, width: 1),
                     ),
                   ),
+
+                  // Process ID label inside block
                   child: Center(
                     child: Text(
                       g['id'],
@@ -467,7 +560,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-                // Time markers below the block
+                // ----------------------- Time Markers -----------------------
                 Container(
                   width: width,
                   height: 25,
@@ -475,20 +568,20 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Start time
                       Padding(
                         padding: const EdgeInsets.only(left: 4),
                         child: Text(
                           '${g['start']}',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          style: const TextStyle(
+                              fontSize: 11, color: Color(0xFF64748B)),
                         ),
                       ),
-                      // End time
                       Padding(
                         padding: const EdgeInsets.only(right: 4),
                         child: Text(
                           '${g['end']}',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          style: const TextStyle(
+                              fontSize: 11, color: Color(0xFF64748B)),
                         ),
                       ),
                     ],
