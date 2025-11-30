@@ -92,7 +92,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
       backgroundColor: Color(0xfff8fafc),
 
       appBar: AppBar(
-        title: Text("CPU Scheduling Comparator"),
+        title: Text("CPU Scheduling FCFS & RR"),
         backgroundColor: Color(0xff2563eb),
       ),
 
