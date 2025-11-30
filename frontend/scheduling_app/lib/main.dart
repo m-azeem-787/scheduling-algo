@@ -92,7 +92,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
       backgroundColor: Color(0xfff8fafc),
 
       appBar: AppBar(
-        title: Text("CPU Scheduling FCFS & RR"),
+        title: Text("CPU Scheduling FCFS & RR",style: TextStyle(color: Colors.white)),
         backgroundColor: Color(0xff2563eb),
       ),
 
@@ -155,7 +155,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                           backgroundColor: Colors.green,
                         ),
                         onPressed: addProcess,
-                        child: Text("Add Process"),
+                        child: Text("Add Process",style: TextStyle(color: Colors.white)),
                       ),
 
                       Row(
@@ -174,7 +174,7 @@ class _SchedulerScreenState extends State<SchedulerScreen> {
                               backgroundColor: Color(0xff2563eb),
                             ),
                             onPressed: calculate,
-                            child: Text("Calculate"),
+                            child: Text("Calculate",style: TextStyle(color: Colors.white)),
                           ),
                         ],
                       )
